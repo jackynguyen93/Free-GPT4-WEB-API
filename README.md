@@ -16,6 +16,7 @@ Self-hosted web API that exposes free, unlimited access to modern LLM providers 
 - **Optional Web GUI** - Easy configuration through browser
 - **Docker support** - Ready-to-use container available
 - **Smart timeout handling** - Automatic retry with optimized timeouts
+- **Telegram bot (optional)** - Chat via Telegram using the same AI backend
 
 Note: The demo server, when available, can be overloaded and may not always respond.
 
@@ -167,6 +168,27 @@ python3 FreeGPT4_Server.py --enable-gui
   - http://127.0.0.1:5500/login
 
 From the GUI you can configure common options (e.g., model, provider, keyword, history, cookies).
+
+### Telegram bot
+
+Run the API with a Telegram bot that answers in chats:
+
+1. Create a bot with BotFather and get its token.
+2. Export it:
+   ```bash
+   export TELEGRAM_BOT_TOKEN="<your-telegram-bot-token>"
+   ```
+3. Start the server with the bot enabled (polling mode):
+   ```bash
+   python3 src/FreeGPT4_Server.py --enable-telegram-bot
+   ```
+   Or pass the token via CLI (overrides env):
+   ```bash
+   python3 src/FreeGPT4_Server.py --enable-telegram-bot --telegram-bot-token "<your-telegram-bot-token>"
+   ```
+4. Chat with your bot on Telegram. Each Telegram user has a separate conversation history.
+
+Optional webhook mode (advanced): set `TELEGRAM_USE_WEBHOOK=true` and `TELEGRAM_WEBHOOK_URL=https://your.domain/telegram/webhook`. You must host the HTTPS webhook endpoint yourself.
 
 ---
 

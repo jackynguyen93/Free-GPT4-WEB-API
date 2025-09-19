@@ -40,6 +40,13 @@ class APIConfig:
     default_provider: str = "DuckDuckGo"  # More reliable than Auto
     default_keyword: str = "text"
     fast_api_port: int = 1336
+
+@dataclass
+class TelegramConfig:
+    """Telegram bot configuration."""
+    bot_token: Optional[str] = os.getenv("TELEGRAM_BOT_TOKEN")
+    webhook_url: Optional[str] = os.getenv("TELEGRAM_WEBHOOK_URL")
+    use_webhook: bool = os.getenv("TELEGRAM_USE_WEBHOOK", "false").lower() == "true"
     
 @dataclass
 class FileConfig:
@@ -62,6 +69,7 @@ class Config:
         self.security = SecurityConfig()
         self.api = APIConfig()
         self.files = FileConfig()
+        self.telegram = TelegramConfig()
         
         # Load environment overrides
         self._load_env_overrides()

@@ -18,7 +18,7 @@ from utils.helpers import (
     select_random_proxy,
     create_dummy_cookies
 )
-from utils.provider_monitor import provider_monitor
+from utils.provider_monitor import provider_monitor, ProviderStatus
 from utils.validation import validate_provider, validate_model
 
 class AIService:
@@ -245,17 +245,21 @@ class AIService:
         # Get reliable providers for fallback
         reliable_providers = provider_monitor.get_reliable_providers(self.config.available_providers)
         
-        # Try original provider first
+        # Try original provider first (unless it's currently degraded/unhealthy)
         if provider != "Auto":
-            ai_provider = self.config.available_providers.get(provider)
-            if ai_provider:
-                logger.info(f"Attempting with provider: {provider}")
-                response = await self._make_api_call(chat_history, ai_provider, model, cookies, proxy, provider)
-                if response:
-                    provider_monitor.record_success(provider)
-                    return response
-                else:
-                    provider_monitor.record_failure(provider, "no_response")
+            health = provider_monitor.get_provider_health(provider)
+            if health.status in [ProviderStatus.DEGRADED, ProviderStatus.UNHEALTHY] or health.consecutive_failures >= 2:
+                logger.info(f"Skipping provider {provider} due to degraded/unhealthy status; trying Auto")
+            else:
+                ai_provider = self.config.available_providers.get(provider)
+                if ai_provider:
+                    logger.info(f"Attempting with provider: {provider}")
+                    response = await self._make_api_call(chat_history, ai_provider, model, cookies, proxy, provider)
+                    if response:
+                        provider_monitor.record_success(provider)
+                        return response
+                    else:
+                        provider_monitor.record_failure(provider, "no_response")
         
         # Try Auto mode
         logger.info("Attempting with Auto mode")
@@ -357,10 +361,18 @@ class AIService:
         
         try:
             # Use safe_api_call with timeout and retry logic
+            # Dynamically reduce timeout and retries for slow/unreliable providers
+            per_provider_timeout = TimeoutConfig.DEFAULT_TIMEOUT
+            per_provider_retries = 1
+            slow_or_brittle = {"DuckDuckGo", "WeWordle"}
+            if provider_name in slow_or_brittle:
+                per_provider_timeout = min(10, TimeoutConfig.DEFAULT_TIMEOUT)  # cap at 10s
+                per_provider_retries = 0  # fail fast
+
             response = await safe_api_call(
                 make_request,
-                timeout=TimeoutConfig.DEFAULT_TIMEOUT,
-                max_retries=1  # Only 1 retry per provider to fail fast
+                timeout=per_provider_timeout,
+                max_retries=per_provider_retries
             )
             
             if response is None:

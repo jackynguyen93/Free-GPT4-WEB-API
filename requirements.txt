@@ -11,3 +11,4 @@ pysqlite3
 python-multipart
 uvicorn
 fastapi
+python-telegram-bot==21.6

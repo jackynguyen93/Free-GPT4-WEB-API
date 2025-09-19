@@ -43,6 +43,7 @@ from utils.helpers import (
     parse_proxy_url,
     safe_filename
 )
+from telegram_bot import start_telegram_bot
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -151,6 +152,17 @@ class ServerArgumentParser:
             action='store_true',
             help="Gives the chance to create and manage new users",
         )
+        parser.add_argument(
+            "--enable-telegram-bot",
+            action='store_true',
+            help="Start Telegram bot (requires TELEGRAM_BOT_TOKEN env)",
+        )
+        parser.add_argument(
+            "--telegram-bot-token",
+            action='store',
+            type=str,
+            help="Telegram bot token (overrides TELEGRAM_BOT_TOKEN env)",
+        )
         
         return parser
     
@@ -226,6 +238,9 @@ class ServerManager:
             # Handle virtual users
             if not hasattr(self.args, 'enable_virtual_users'):
                 self.args.enable_virtual_users = settings.get("virtual_users", False)
+            # Telegram bot flag (no DB setting; env controls token)
+            if not hasattr(self.args, 'enable_telegram_bot'):
+                self.args.enable_telegram_bot = False
             
         except Exception as e:
             logger.error(f"Failed to merge settings: {e}")
@@ -499,13 +514,17 @@ def save_settings():
         # Boolean settings
         bool_fields = [
             "file_input", "remove_sources", "message_history", 
-            "proxies", "fast_api", "virtual_users"
+            "proxies", "fast_api", "virtual_users", "telegram_bot"
         ]
         for field in bool_fields:
             settings_update[field] = request.form.get(field) == "true"
         
         # String settings
         string_fields = ["port", "model", "keyword", "provider", "system_prompt"]
+        # Add telegram bot token if present
+        telegram_bot_token = request.form.get("telegram_bot_token", "")
+        if telegram_bot_token is not None:
+            settings_update["telegram_bot_token"] = sanitize_input(telegram_bot_token, 200)
         for field in string_fields:
             value = request.form.get(field, "")
             if field == "port":
@@ -610,6 +629,13 @@ def save_settings():
         # Restart Fast API if needed
         if settings_update.get("fast_api") and not server_manager.fast_api_thread:
             server_manager.start_fast_api()
+
+        # Start/stop Telegram bot based on settings
+        try:
+            if settings_update.get("telegram_bot"):
+                start_telegram_bot(blocking=False, token_override=settings_update.get("telegram_bot_token") or None)
+        except Exception as e:
+            logger.error(f"Failed to apply Telegram bot settings: {e}")
         
         logger.info("Settings saved successfully")
         return "Settings saved and applied successfully!"
@@ -718,8 +744,16 @@ def main():
         logger.info(f"  History enabled: {args.enable_history}")
         logger.info(f"  Proxies enabled: {args.enable_proxies}")
         logger.info(f"  Virtual users: {args.enable_virtual_users}")
+        logger.info(f"  Telegram bot: {args.enable_telegram_bot}")
         
         # Start server
+        # Optionally start Telegram bot in background
+        if args.enable_telegram_bot:
+            try:
+                start_telegram_bot(blocking=False, token_override=args.telegram_bot_token)
+            except Exception as e:
+                logger.error(f"Failed to start Telegram bot: {e}")
+
         app.run(
             host=config.server.host,
             port=args.port,

@@ -47,6 +47,8 @@ class ServerSettings:
     fast_api: bool = False
     virtual_users: bool = False
     chat_history: str = ""
+    telegram_bot: bool = False
+    telegram_bot_token: str = ""
 
 class DatabaseManager:
     """Database manager for FreeGPT4 Web API."""
@@ -109,9 +111,20 @@ class DatabaseManager:
                         password TEXT NOT NULL,
                         fast_api BOOLEAN NOT NULL,
                         virtual_users BOOLEAN NOT NULL,
-                        chat_history TEXT NOT NULL
+                        chat_history TEXT NOT NULL,
+                        telegram_bot BOOLEAN NOT NULL DEFAULT 0,
+                        telegram_bot_token TEXT NOT NULL DEFAULT ""
                     )
                 """)
+                # In case the table existed before, ensure new columns exist
+                try:
+                    cursor.execute("ALTER TABLE settings ADD COLUMN telegram_bot BOOLEAN NOT NULL DEFAULT 0")
+                except sqlite3.OperationalError:
+                    pass
+                try:
+                    cursor.execute("ALTER TABLE settings ADD COLUMN telegram_bot_token TEXT NOT NULL DEFAULT ''")
+                except sqlite3.OperationalError:
+                    pass
                 
                 # Create personal settings table
                 cursor.execute("""
@@ -147,8 +160,8 @@ class DatabaseManager:
             INSERT INTO settings (
                 id, keyword, file_input, port, provider, model, cookie_file,
                 token, remove_sources, system_prompt, message_history, proxies,
-                password, fast_api, virtual_users, chat_history
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                password, fast_api, virtual_users, chat_history, telegram_bot, telegram_bot_token
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             default_settings.id,
             default_settings.keyword,
@@ -165,7 +178,9 @@ class DatabaseManager:
             default_settings.password,
             default_settings.fast_api,
             default_settings.virtual_users,
-            default_settings.chat_history
+            default_settings.chat_history,
+            default_settings.telegram_bot,
+            default_settings.telegram_bot_token
         ))
         logger.info("Default settings created")
     
@@ -197,7 +212,9 @@ class DatabaseManager:
                     "proxies": bool(row["proxies"]),
                     "password": row["password"],
                     "fast_api": bool(row["fast_api"]),
-                    "virtual_users": bool(row["virtual_users"])
+                    "virtual_users": bool(row["virtual_users"]),
+                    "telegram_bot": bool(row["telegram_bot"]),
+                    "telegram_bot_token": row["telegram_bot_token"],
                 }
         except DatabaseError:
             raise

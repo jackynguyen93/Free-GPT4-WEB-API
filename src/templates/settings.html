@@ -42,6 +42,34 @@
         {% if username == "admin" %}
             <h3 class="title blue text-xl">Server</h3>
             <tr>
+                <td class="py-1 fond-bold inter darkblue text-lg border-b border-slate-800" id="set_7">
+                    <b>Telegram Bot:</b>
+                </td>
+                <td class="py-1 fond-bold inter darkblue text-lg">
+                {% if data['telegram_bot'] %}
+                    <input type="radio" id="off_rad_7" name="telegram_bot" value="false" class="hidden" oninput="turnOff('on_7', 'off_7', 'set_7'); hideElement('telegram_bot_token_div');">
+                    <label for="off_rad_7" id="off_7" class="label_gray"><b>OFF</b></label>
+                    <p class="inline-block mx-1"> - </p>
+                    <input type="radio" id="on_rad_7" name="telegram_bot" value="true" class="hidden" oninput="turnOn('on_7', 'off_7', 'set_7'); showElement('telegram_bot_token_div');" checked>
+                    <label for="on_rad_7" id="on_7" class="label_green"><b>ON</b></label>
+                {% else %}
+                    <input type="radio" id="off_rad_7" name="telegram_bot" value="false" class="hidden" oninput="turnOff('on_7', 'off_7', 'set_7'); hideElement('telegram_bot_token_div');" checked>
+                    <label for="off_rad_7" id="off_7" class="label_red"><b>OFF</b></label>
+                    <p class="inline-block mx-1"> - </p>
+                    <input type="radio" id="on_rad_7" name="telegram_bot" value="true" class="hidden" oninput="turnOn('on_7', 'off_7', 'set_7'); showElement('telegram_bot_token_div');">
+                    <label for="on_rad_7" id="on_7" class="label_gray"><b>ON</b></label>
+                {% endif %}
+                </td>
+            </tr>
+            <tr id="telegram_bot_token_div" class="{% if not data['telegram_bot'] %}hidden{% endif %}">
+                <td class="py-1 fond-bold inter darkblue text-lg border-b border-slate-800"><b>Telegram Bot Token:</b></td>
+                <td class="py-1 fond-bold inter darkblue text-lg">
+                    <b>
+                        <input type="text" id="telegram_bot_token" name="telegram_bot_token" class="input outline-none py-1 px-2 rounded-lg inter w-full" placeholder="123456:ABCDEF..." value="{{ data['telegram_bot_token'] }}" />
+                    </b>
+                </td>
+            </tr>
+            <tr>
                 <td class="py-1 fond-bold inter darkblue text-lg border-b border-slate-800" id="set_0"><b>File input support:</b></td>
                 <td class="py-1 fond-bold inter darkblue text-lg">
                 {% if data['file_input'] %}
