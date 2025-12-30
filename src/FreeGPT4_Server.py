@@ -44,6 +44,7 @@ from utils.helpers import (
     safe_filename
 )
 from telegram_bot import start_telegram_bot
+from slack_bot import start_slack_bot
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -163,6 +164,23 @@ class ServerArgumentParser:
             type=str,
             help="Telegram bot token (overrides TELEGRAM_BOT_TOKEN env)",
         )
+        parser.add_argument(
+            "--enable-slack-bot",
+            action='store_true',
+            help="Start Slack bot (requires SLACK_BOT_TOKEN and SLACK_APP_TOKEN env)",
+        )
+        parser.add_argument(
+            "--slack-bot-token",
+            action='store',
+            type=str,
+            help="Slack bot token (overrides SLACK_BOT_TOKEN env)",
+        )
+        parser.add_argument(
+            "--slack-app-token",
+            action='store',
+            type=str,
+            help="Slack app token (overrides SLACK_APP_TOKEN env)",
+        )
         
         return parser
     
@@ -241,6 +259,10 @@ class ServerManager:
             # Telegram bot flag (no DB setting; env controls token)
             if not hasattr(self.args, 'enable_telegram_bot'):
                 self.args.enable_telegram_bot = False
+                
+            # Slack bot flag (no DB setting; env controls tokens)
+            if not hasattr(self.args, 'enable_slack_bot'):
+                self.args.enable_slack_bot = False
             
         except Exception as e:
             logger.error(f"Failed to merge settings: {e}")
@@ -514,7 +536,7 @@ def save_settings():
         # Boolean settings
         bool_fields = [
             "file_input", "remove_sources", "message_history", 
-            "proxies", "fast_api", "virtual_users", "telegram_bot"
+            "proxies", "fast_api", "virtual_users", "telegram_bot", "slack_bot"
         ]
         for field in bool_fields:
             settings_update[field] = request.form.get(field) == "true"
@@ -525,6 +547,16 @@ def save_settings():
         telegram_bot_token = request.form.get("telegram_bot_token", "")
         if telegram_bot_token is not None:
             settings_update["telegram_bot_token"] = sanitize_input(telegram_bot_token, 200)
+            
+        # Add slack tokens
+        slack_bot_token = request.form.get("slack_bot_token", "")
+        if slack_bot_token is not None:
+             settings_update["slack_bot_token"] = sanitize_input(slack_bot_token, 200)
+
+        slack_app_token = request.form.get("slack_app_token", "")
+        if slack_app_token is not None:
+             settings_update["slack_app_token"] = sanitize_input(slack_app_token, 200)
+
         for field in string_fields:
             value = request.form.get(field, "")
             if field == "port":
@@ -636,6 +668,17 @@ def save_settings():
                 start_telegram_bot(blocking=False, token_override=settings_update.get("telegram_bot_token") or None)
         except Exception as e:
             logger.error(f"Failed to apply Telegram bot settings: {e}")
+
+        # Start/stop Slack bot based on settings
+        try:
+            if settings_update.get("slack_bot"):
+                start_slack_bot(
+                    blocking=False, 
+                    bot_token_override=settings_update.get("slack_bot_token") or None,
+                    app_token_override=settings_update.get("slack_app_token") or None
+                )
+        except Exception as e:
+            logger.error(f"Failed to apply Slack bot settings: {e}")
         
         logger.info("Settings saved successfully")
         return "Settings saved and applied successfully!"
@@ -745,6 +788,7 @@ def main():
         logger.info(f"  Proxies enabled: {args.enable_proxies}")
         logger.info(f"  Virtual users: {args.enable_virtual_users}")
         logger.info(f"  Telegram bot: {args.enable_telegram_bot}")
+        logger.info(f"  Slack bot: {args.enable_slack_bot}")
         
         # Start server
         # Optionally start Telegram bot in background
@@ -753,6 +797,17 @@ def main():
                 start_telegram_bot(blocking=False, token_override=args.telegram_bot_token)
             except Exception as e:
                 logger.error(f"Failed to start Telegram bot: {e}")
+
+        # Optionally start Slack bot
+        if args.enable_slack_bot:
+            try:
+                start_slack_bot(
+                    blocking=False, 
+                    bot_token_override=args.slack_bot_token,
+                    app_token_override=args.slack_app_token
+                )
+            except Exception as e:
+                logger.error(f"Failed to start Slack bot: {e}")
 
         app.run(
             host=config.server.host,

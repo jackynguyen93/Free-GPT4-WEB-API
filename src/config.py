@@ -49,6 +49,13 @@ class TelegramConfig:
     use_webhook: bool = os.getenv("TELEGRAM_USE_WEBHOOK", "false").lower() == "true"
     
 @dataclass
+class SlackConfig:
+    """Slack bot configuration."""
+    bot_token: Optional[str] = os.getenv("SLACK_BOT_TOKEN")
+    app_token: Optional[str] = os.getenv("SLACK_APP_TOKEN")
+
+    
+@dataclass
 class FileConfig:
     """File configuration."""
     upload_folder: str = str(DATA_DIR)
@@ -70,6 +77,7 @@ class Config:
         self.api = APIConfig()
         self.files = FileConfig()
         self.telegram = TelegramConfig()
+        self.slack = SlackConfig()
         
         # Load environment overrides
         self._load_env_overrides()

@@ -12,3 +12,5 @@ python-multipart
 uvicorn
 fastapi
 python-telegram-bot==21.6
+slack-bolt
+slack-sdk

@@ -70,6 +70,42 @@
                 </td>
             </tr>
             <tr>
+                <td class="py-1 fond-bold inter darkblue text-lg border-b border-slate-800" id="set_8">
+                    <b>Slack Bot:</b>
+                </td>
+                <td class="py-1 fond-bold inter darkblue text-lg">
+                {% if data['slack_bot'] %}
+                    <input type="radio" id="off_rad_8" name="slack_bot" value="false" class="hidden" oninput="turnOff('on_8', 'off_8', 'set_8'); hideElement('slack_bot_token_div'); hideElement('slack_app_token_div');">
+                    <label for="off_rad_8" id="off_8" class="label_gray"><b>OFF</b></label>
+                    <p class="inline-block mx-1"> - </p>
+                    <input type="radio" id="on_rad_8" name="slack_bot" value="true" class="hidden" oninput="turnOn('on_8', 'off_8', 'set_8'); showElement('slack_bot_token_div'); showElement('slack_app_token_div');" checked>
+                    <label for="on_rad_8" id="on_8" class="label_green"><b>ON</b></label>
+                {% else %}
+                    <input type="radio" id="off_rad_8" name="slack_bot" value="false" class="hidden" oninput="turnOff('on_8', 'off_8', 'set_8'); hideElement('slack_bot_token_div'); hideElement('slack_app_token_div');" checked>
+                    <label for="off_rad_8" id="off_8" class="label_red"><b>OFF</b></label>
+                    <p class="inline-block mx-1"> - </p>
+                    <input type="radio" id="on_rad_8" name="slack_bot" value="true" class="hidden" oninput="turnOn('on_8', 'off_8', 'set_8'); showElement('slack_bot_token_div'); showElement('slack_app_token_div');">
+                    <label for="on_rad_8" id="on_8" class="label_gray"><b>ON</b></label>
+                {% endif %}
+                </td>
+            </tr>
+            <tr id="slack_bot_token_div" class="{% if not data['slack_bot'] %}hidden{% endif %}">
+                <td class="py-1 fond-bold inter darkblue text-lg border-b border-slate-800"><b>Slack Bot Token:</b></td>
+                <td class="py-1 fond-bold inter darkblue text-lg">
+                    <b>
+                        <input type="text" id="slack_bot_token" name="slack_bot_token" class="input outline-none py-1 px-2 rounded-lg inter w-full" placeholder="xoxb-..." value="{{ data['slack_bot_token'] }}" />
+                    </b>
+                </td>
+            </tr>
+            <tr id="slack_app_token_div" class="{% if not data['slack_bot'] %}hidden{% endif %}">
+                <td class="py-1 fond-bold inter darkblue text-lg border-b border-slate-800"><b>Slack App Token:</b></td>
+                <td class="py-1 fond-bold inter darkblue text-lg">
+                    <b>
+                        <input type="text" id="slack_app_token" name="slack_app_token" class="input outline-none py-1 px-2 rounded-lg inter w-full" placeholder="xapp-..." value="{{ data['slack_app_token'] }}" />
+                    </b>
+                </td>
+            </tr>
+            <tr>
                 <td class="py-1 fond-bold inter darkblue text-lg border-b border-slate-800" id="set_0"><b>File input support:</b></td>
                 <td class="py-1 fond-bold inter darkblue text-lg">
                 {% if data['file_input'] %}
