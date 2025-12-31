@@ -68,12 +68,17 @@ def start_slack_bot(blocking: bool = False, bot_token_override: Optional[str] = 
         logger.info("SLACK_BOT_TOKEN or SLACK_APP_TOKEN not set; Slack bot disabled")
         return None
 
-    try:
-        # Create app
-        app = AsyncApp(token=bot_token)
-        
-        # Add message handler
-        @app.message()
+    # Logic to handle message processing - define here to share if needed, 
+    # but for Bolt, we typically attach decorators to the 'app' instance.
+    # Since we need to create 'app' inside the loop for the thread case,
+    # we'll define a factory or just duplicate the setup slightly.
+
+    async def _setup_and_run(app_instance: AsyncApp, token: str):
+        handler = AsyncSocketModeHandler(app_instance, token)
+        await handler.start_async()
+
+    def _register_handlers(app_instance: AsyncApp):
+        @app_instance.message()
         async def handle_message(message, say):
             text = message.get("text", "")
             user_id = message.get("user", "unknown")
@@ -81,19 +86,21 @@ def start_slack_bot(blocking: bool = False, bot_token_override: Optional[str] = 
             if not text.strip():
                 return
             
-            # Send initial response or typing indicator if possible (Slack doesn't have a simple "typing" API like Telegram without RTM)
-            # For now, we just process and reply.
-            
             reply = await _generate_answer(text, user_id)
             await say(reply)
 
-        # Attempt to use an existing running loop; if none, start a background thread
+    try:
+        # Attempt to use an existing running loop
         try:
             loop = asyncio.get_running_loop()
             
-            # Start in this loop
+            # We are in an async context (e.g. main thread loop)
+            # Safe to create app here
             logger.info("Starting Slack bot in current loop")
-            task = loop.create_task(_run_slack_bot(app, app_token))
+            app = AsyncApp(token=bot_token)
+            _register_handlers(app)
+            
+            task = loop.create_task(_setup_and_run(app, app_token))
             
             if blocking:
                 loop.run_until_complete(task)
@@ -107,13 +114,13 @@ def start_slack_bot(blocking: bool = False, bot_token_override: Optional[str] = 
                     loop = asyncio.new_event_loop()
                     asyncio.set_event_loop(loop)
 
-                    # Re-create app in the new loop context if needed, but bolt is mostly loop-agnostic until run
-                    # However, AsyncApp might bind to the loop on init? 
-                    # Generally, it's safer to init AsyncApp inside the loop if possible, 
-                    # but since we define the decorated handler above, we need 'app' to exist.
-                    # Standard practice with bolt-python async is pretty flexible.
-                    
                     logger.info("Starting Slack bot with Socket Mode in background thread...")
+                    
+                    # Create App INSIDE the thread's loop context
+                    # This ensures any internal loop logic in Bolt binds to this new loop
+                    app = AsyncApp(token=bot_token)
+                    _register_handlers(app)
+                    
                     handler = AsyncSocketModeHandler(app, app_token)
                     loop.run_until_complete(handler.start_async())
                 except Exception as exc:
@@ -128,6 +135,10 @@ def start_slack_bot(blocking: bool = False, bot_token_override: Optional[str] = 
             t.start()
             logger.info("Slack bot started in background thread")
             return None
+
+    except Exception as e:
+        logger.error(f"Failed to initialize Slack bot: {e}")
+        return None
 
     except Exception as e:
         logger.error(f"Failed to initialize Slack bot: {e}")
