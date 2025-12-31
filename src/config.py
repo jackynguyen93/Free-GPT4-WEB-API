@@ -102,23 +102,15 @@ class Config:
         import g4f
         return {
             "Auto": "",
-            # "ARTA": g4f.Provider.ARTA,  # Removed due to AttributeError
-            "Blackbox": g4f.Provider.Blackbox,
-            # "Chatai": g4f.Provider.Chatai,  # Temporarily disabled due to 401 errors
-            "Cloudflare": g4f.Provider.Cloudflare,
-            "Copilot": g4f.Provider.Copilot,
-            "DeepInfra": g4f.Provider.DeepInfra,
-            "DuckDuckGo": g4f.Provider.DuckDuckGo,
-            "LambdaChat": g4f.Provider.LambdaChat,
-            # "OIVSCodeSer0501": g4f.Provider.OIVSCodeSer0501,
-            # "OpenAIFM": g4f.Provider.OpenAIFM,
-            "PerplexityLabs": g4f.Provider.PerplexityLabs,
-            "PollinationsAI": g4f.Provider.PollinationsAI,
-            # "PollinationsImage": g4f.Provider.PollinationsImage,  # Image provider
-            "TeachAnything": g4f.Provider.TeachAnything,
-            "Together": g4f.Provider.Together,
-            "WeWordle": g4f.Provider.WeWordle,
-            "Yqcloud": g4f.Provider.Yqcloud,
+            **{
+                provider: getattr(g4f.Provider, provider)
+                for provider in [
+                    "ARTA", "Blackbox", "Cloudflare", "Copilot", "DeepInfra", 
+                    "DuckDuckGo", "LambdaChat", "PerplexityLabs", "PollinationsAI", 
+                    "TeachAnything", "Together", "WeWordle", "Yqcloud"
+                ]
+                if hasattr(g4f.Provider, provider)
+            }
         }
     
     @property
