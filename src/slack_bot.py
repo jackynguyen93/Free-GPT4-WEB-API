@@ -116,13 +116,16 @@ def start_slack_bot(blocking: bool = False, bot_token_override: Optional[str] = 
 
                     logger.info("Starting Slack bot with Socket Mode in background thread...")
                     
-                    # Create App INSIDE the thread's loop context
-                    # This ensures any internal loop logic in Bolt binds to this new loop
-                    app = AsyncApp(token=bot_token)
-                    _register_handlers(app)
-                    
-                    handler = AsyncSocketModeHandler(app, app_token)
-                    loop.run_until_complete(handler.start_async())
+                    async def runner():
+                        # Create App INSIDE the running loop
+                        app = AsyncApp(token=bot_token)
+                        _register_handlers(app)
+                        
+                        handler = AsyncSocketModeHandler(app, app_token)
+                        await handler.start_async()
+
+                    # Run the runner coroutine until completion (it runs forever)
+                    loop.run_until_complete(runner())
                 except Exception as exc:
                     logger.error(f"Slack bot thread failed: {exc}")
                 finally:
