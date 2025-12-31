@@ -37,7 +37,7 @@ class SecurityConfig:
 class APIConfig:
     """API configuration."""
     default_model: str = "gpt-4"
-    default_provider: str = "DuckDuckGo"  # More reliable than Auto
+    default_provider: str = "Auto"
     default_keyword: str = "text"
     fast_api_port: int = 1336
 

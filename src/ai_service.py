@@ -83,13 +83,15 @@ class AIService:
                 }
             
             # Validate provider and model
-            is_valid, error_msg = validate_provider(user_settings["provider"], self.config.available_providers)
-            if not is_valid:
-                raise ValidationError(error_msg)
+            is_valid_provider, provider_error = validate_provider(user_settings["provider"], self.config.available_providers)
+            if not is_valid_provider:
+                logger.warning(f"{provider_error}. Fallback to Auto.")
+                user_settings["provider"] = "Auto"
             
-            is_valid, error_msg = validate_model(user_settings["model"])
-            if not is_valid:
-                raise ValidationError(error_msg)
+            is_valid_model, model_error = validate_model(user_settings["model"])
+            if not is_valid_model:
+                logger.warning(f"{model_error}. Fallback to default model.")
+                user_settings["model"] = self.config.api.default_model
             
             # Prepare chat history
             chat_history = self._prepare_chat_history(
