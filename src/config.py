@@ -102,7 +102,7 @@ class Config:
         import g4f
         return {
             "Auto": "",
-            "ARTA": g4f.Provider.ARTA,
+            # "ARTA": g4f.Provider.ARTA,  # Removed due to AttributeError
             "Blackbox": g4f.Provider.Blackbox,
             # "Chatai": g4f.Provider.Chatai,  # Temporarily disabled due to 401 errors
             "Cloudflare": g4f.Provider.Cloudflare,
