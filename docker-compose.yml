@@ -5,5 +5,5 @@ services:
     build: .
     ports:
       - "5500:5500"
-    command: --remove-sources --provider You --cookie-file /app/src/data/cookies.json --enable-telegram-bot --enable-gui --password admin123
+    command: --remove-sources --provider You --cookie-file /app/src/data/cookies.json --enable-telegram-bot --enable-slack-bot --slack-bot-token xoxb-201888957191-10203572558869-ZByJrjDm2L1ikFSV9udnkxnS  --slack-app-token xapp-1-A0A6X9DSGU8-10200631836819-e5e7e580881d6eb4d92ae88ccc7f131667c50f8811b7691ad32499feb63712f5 --enable-gui --password admin123
     #command: --remove-sources
